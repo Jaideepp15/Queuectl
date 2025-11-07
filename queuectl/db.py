@@ -18,8 +18,9 @@ class DB:
             id TEXT PRIMARY KEY,
             command TEXT NOT NULL,
             state TEXT NOT NULL,
-            attempts INTEGER NOT NULL DEFAULT 0,
-            max_retries INTEGER NOT NULL DEFAULT {DEFAULT_MAX_RETRIES},
+            attempts INTEGER DEFAULT 0,
+            max_retries INTEGER DEFAULT {DEFAULT_MAX_RETRIES},
+            priority INTEGER DEFAULT 5,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             run_after INTEGER DEFAULT 0,
@@ -75,11 +76,14 @@ class DB:
         job.setdefault('created_at', now)
         job.setdefault('updated_at', now)
         run_after = int(time.time())
+        priority = int(job.get("priority", 5))
+        if priority < 1 or priority > 10:
+            priority = 5
 
-        cur.execute('''INSERT INTO jobs(id,command,state,attempts,max_retries,created_at,updated_at,run_after,last_error)
-                    VALUES(?,?,?,?,?,?,?,?,?)''', (
-            job['id'], job['command'], job['state'], job['attempts'], job['max_retries'],
-            job['created_at'], job['updated_at'], run_after, None
+        cur.execute('''INSERT INTO jobs(id,command,state,attempts,max_retries,priority,created_at,updated_at,run_after,last_error)
+                    VALUES(?,?,?,?,?,?,?,?,?,?)''', (
+            job['id'], job['command'], job['state'], job['attempts'], job.get("max_retries", DEFAULT_MAX_RETRIES),
+            priority,job['created_at'], job['updated_at'], run_after, None
         ))
 
         self.conn.commit()
@@ -94,9 +98,9 @@ class DB:
     def list_jobs(self, state=None):
         cur = self.conn.cursor()
         if state:
-            cur.execute('SELECT * FROM jobs WHERE state=? ORDER BY created_at', (state,))
+            cur.execute("SELECT * FROM jobs WHERE state LIKE ? ORDER BY priority ASC, created_at ASC", (state,))
         else:
-            cur.execute('SELECT * FROM jobs ORDER BY created_at')
+            cur.execute('SELECT * FROM jobs ORDER BY priority ASC, created_at ASC')
         return [dict(r) for r in cur.fetchall()]
 
     def _atomic_claim_job(self):
@@ -104,9 +108,19 @@ class DB:
         cur = self.conn.cursor()
         now = int(time.time())
         try:
+            cur.execute('''
+                UPDATE jobs
+                SET priority = CASE
+                    WHEN state='pending' AND priority > 1 AND (? - strftime('%s', created_at)) / 60 >= priority
+                    THEN priority - 1
+                    ELSE priority
+                END
+                WHERE state='pending'
+            ''', (now,))
+            self.conn.commit()
             # Start exclusive transaction to avoid races
             cur.execute('BEGIN IMMEDIATE')
-            cur.execute("SELECT * FROM jobs WHERE (state='pending' OR (state='failed' AND run_after <= ?)) ORDER BY created_at LIMIT 1", (now,))
+            cur.execute('''SELECT * FROM jobs WHERE (state='pending' OR (state='failed' AND run_after<=?)) ORDER BY priority ASC, created_at ASC LIMIT 1''', (now,))
             r = cur.fetchone()
             if not r:
                 self.conn.commit()
