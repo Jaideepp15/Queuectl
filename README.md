@@ -327,16 +327,11 @@ queuectl dlq list
 
 ---
 
-## 🧾 License
-
-MIT License — feel free to modify and extend.
-
----
-
 ## 👨‍💻 Author
 
-**Jaideep**  
-Amrita Vishwa Vidyapeetham University, Coimbatore  
+**Jaideep Palaniselvan**  
+Amrita Vishwa Vidyapeetham, Coimbatore  
 
-📧 your.email@example.com
+📧 jaideepp15@gmail.com
+
 
