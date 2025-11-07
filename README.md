@@ -1,4 +1,4 @@
-# 🧰 queuectl — Minimal Production-Grade Job Queue (Python)
+# 🧰 Queuectl — A CLI-based background job queue system (Python)
 
 A CLI-based background job queue system built with **SQLite persistence**, **multi-worker support**, **automatic retries with exponential backoff**, and a **Dead Letter Queue (DLQ)**.
 
@@ -337,4 +337,5 @@ MIT License — feel free to modify and extend.
 
 **Jaideep**  
 Amrita Vishwa Vidyapeetham University, Coimbatore  
+
 📧 your.email@example.com
