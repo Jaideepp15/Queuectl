@@ -80,7 +80,7 @@ queuectl --help
 1️⃣ Clone the repository:
 
 ```powershell
-git clone https://github.com/<your-username>/queuectl.git
+git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
@@ -339,3 +339,4 @@ MIT License — feel free to modify and extend.
 Amrita Vishwa Vidyapeetham University, Coimbatore  
 
 📧 your.email@example.com
+
