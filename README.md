@@ -466,11 +466,11 @@ Queuectl is designed as a lightweight, production-style background job queue sys
 Each job moves through well-defined states from creation to completion.
 | **State** | **Description** | 
 |-----------|-----------------|
-| Pending | The job has been enqueued and is waiting to be picked up by a worker. |
-| Processing | A worker has claimed the job and is currently executing its command. |
-| Completed | The job finished successfully (exit code 0). |
-| Failed | The job failed (non-zero exit code) but is still retryable. |
-| Dead | The job exceeded its retry limit and was moved to the Dead Letter Queue (DLQ). |
+| `Pending` | The job has been enqueued and is waiting to be picked up by a worker. |
+| `Processing` | A worker has claimed the job and is currently executing its command. |
+| `Completed` | The job finished successfully (exit code 0). |
+| `Failed` | The job failed (non-zero exit code) but is still retryable. |
+| `Dead` | The job exceeded its retry limit and was moved to the Dead Letter Queue (DLQ). |
 
 **State Transitions**
 ```
@@ -725,6 +725,7 @@ SQLite keeps the database file open while workers are running, preventing file r
 ### Windows (PowerShell)
 
 <img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
 
 
 
