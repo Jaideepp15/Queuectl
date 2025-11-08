@@ -50,7 +50,7 @@ Queuectl/
 
 ## Installation
 
-### On Ubuntu / WSL
+### On Ubuntu / WSL (Recommended OS)
 
 #### Option 1 - Installing in User Mode
 
@@ -423,6 +423,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
