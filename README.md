@@ -204,8 +204,6 @@ This ensures fair scheduling while honoring job importance.
 
 Workers are long-running processes that continuously poll and execute jobs from the queue.
 
-### On Linux / Ubuntu / WSL
-
 ```bash
 queuectl worker start --count 3
 ```
@@ -226,33 +224,6 @@ Keep this terminal open — workers will continue polling for jobs.
 Open a second terminal to enqueue and inspect jobs:
 
 ```bash
-queuectl enqueue '{"command":"echo another job"}'
-queuectl status
-```
-
----
-
-### On Windows
-
-```powershell
-queuectl worker start --count 3
-```
-
-Example output:
-
-```
-[worker 0] pid=5012 started
-[worker 0] picked job job1: echo hello
-hello
-[worker 0] job job1 completed
-[worker 1] pid=5013 started
-[worker 2] pid=5015 started
-```
-
-Keep this terminal open for active workers.
-Open another terminal for management commands:
-
-```powershell
 queuectl enqueue '{"command":"echo another job"}'
 queuectl status
 ```
@@ -333,6 +304,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
