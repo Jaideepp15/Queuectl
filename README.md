@@ -338,7 +338,7 @@ Enqueued job job5
 
 Command:
 ```bash
-queuectl list --state failed
+queuectl list --state dead
 ```
 Expected Output:
 ```bash
@@ -723,6 +723,7 @@ SQLite keeps the database file open while workers are running, preventing file r
 ### Windows (PowerShell)
 
 <img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
 
 
 
