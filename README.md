@@ -204,6 +204,7 @@ The format for providing the job as a JSON document varies depending on the term
 | List jobs | `queuectl list --state pending` |
 | View DLQ | `queuectl dlq list` |
 | Retry DLQ job | `queuectl dlq retry job1` |
+| Get config values | `queuectl config get backoff_base` |
 | Set config values | `queuectl config set backoff_base 2` |
 | Clear all jobs | `queuectl reset` |
 | Help | `queuectl --help` or `queuectl <command> --help` |
@@ -724,6 +725,7 @@ SQLite keeps the database file open while workers are running, preventing file r
 ### Windows (PowerShell)
 
 <img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
 
 
 
