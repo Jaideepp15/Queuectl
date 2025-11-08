@@ -178,31 +178,6 @@ queuectl status
 
 ---
 
-## Priority Scheduling & Aging
-
-### Priority
-
-Each job can be assigned a priority from **1** to **10**:
-
-* 1 = **Highest priority**
-
-* 10 = **Lowest priority**
-
-* Default = **5**
-
-Jobs with a lower priority number run first.
-If two jobs share the same priority, the earlier created_at job executes first.
-
-### Aging (Anti-Starvation)
-
-To prevent starvation of low-priority jobs:
-
-* Every minute a job remains pending, its priority improves (priority number decreases).
-
-* It won’t drop below priority 1.
-
-* Eventually, long-waiting jobs will bubble up and be executed.
-
 Example:
 
 | **Job Id** | **Initial Priority** | **Wait time(mins)** | **Aged Priority** |
@@ -232,8 +207,7 @@ This ensures fair scheduling while honoring job importance.
 
 ## Architecture Overview
 
-queuectl is designed as a lightweight, production-style background job queue system built entirely with Python's standard library and SQLite.
-It models how large-scale distributed job systems like Celery, Sidekiq, and RQ work — but in a single-machine environment.
+Queuectl is designed as a lightweight, production-style background job queue system built entirely with Python's standard library and SQLite.
 
 ### System Components
 
@@ -257,6 +231,7 @@ Each job moves through well-defined states from creation to completion.
 | Dead | The job exceeded its retry limit and was moved to the Dead Letter Queue (DLQ). |
 
 **State Transitions**
+```
         ┌────────────┐
         │  pending   │
         └─────┬──────┘
@@ -282,6 +257,7 @@ Each job moves through well-defined states from creation to completion.
                   ┌──────────┐
                   │   dead   │
                   └──────────┘
+```
 
 ### Job Execution and Priority Scheduling
 
@@ -296,7 +272,9 @@ Each job record includes:
     "max_retries": 3,
     "state": "pending",
     "created_at": "...",
-    "updated_at": "..."
+    "updated_at": "...",
+    "run_at": "...",
+    "last_error":"..."
 }
 ```
 Jobs are ordered by priority (ascending):
@@ -307,8 +285,8 @@ Range: 1 (highest) → 10 (lowest).
 
 If two jobs share the same priority, the earlier-created job is executed first (FIFO order).
 Aging is implemented to prevent starvation:
-
-Pending jobs automatically gain higher priority (priority number decreases) the longer they wait in the queue.
+- Every minute a job remains pending, its priority improves (priority number decreases).
+- Eventually, long-waiting jobs will bubble up and be executed.
 
 ### Retry Mechanism and Backoff Strategy
 
@@ -325,96 +303,82 @@ If a job exceeds its retry count, it transitions from failed → dead, and becom
 ### Data Persistence (SQLite)
 
 All jobs, configs, and metadata are persisted in SQLite at:
-**Linux:**
+Linux:
 ```bash
 ~/.queuectl/jobs.db
 ```
-**Windows:**
+Windows:
 ```cmd
 %USERPROFILE%\.queuectl\jobs.db
 ```
 Tables:
-
 jobs — stores all job records with states, timestamps, and retry data.
 config — stores runtime configuration values (backoff_base, default_max_retries, etc.).
 
 Persistence ensures:
-
-Jobs survive process restarts or system shutdowns.
-DLQ entries can be retried across sessions.
-Workers can safely resume after crashes.
+* Jobs survive process restarts or system shutdowns.
+* DLQ entries can be retried across sessions.
+* Workers can safely resume after crashes.
 
 SQLite is configured in WAL (Write-Ahead Logging) mode for better concurrency and performance:
-sqlPRAGMA journal_mode=WAL;
+```sql
+PRAGMA journal_mode=WAL;
 PRAGMA synchronous=NORMAL;
+```
 This allows multiple workers to read and write concurrently without corruption or blocking.
 
 ### Worker Logic
 
 Workers are implemented as independent background processes (multiprocessing).
 Each worker repeatedly:
-
-Connects to the shared SQLite DB.
-Atomically fetches the next highest-priority pending job:
-
+1. Connects to the shared SQLite DB.
+2. Atomically fetches the next highest-priority pending job:
 ```sql
-    SELECT * FROM jobs
-   WHERE state='pending' AND run_after <= current_timestamp
-   ORDER BY priority ASC, created_at ASC
-   LIMIT 1;
+SELECT * FROM jobs
+WHERE state='pending' AND run_after <= current_timestamp
+ORDER BY priority ASC, created_at ASC
+LIMIT 1;
 ```
-
-Marks it as processing inside a transaction.
-Executes the job's shell command via subprocess.run().
-Updates the job record with:
-
-state='completed' if success
-state='failed' if non-zero exit code
-attempts++, run_after set to next backoff delay
-
-
-If retries exceed max_retries, marks job as dead (DLQ).
-Sleeps for a short polling interval (e.g., 1 second) and repeats.
+3. Marks it as processing inside a transaction.
+4. Executes the job's shell command via subprocess.run().
+5. Updates the job record with:
+  * state='completed' if success
+  * state='failed' if non-zero exit code
+  * attempts++, run_after set to next backoff delay
+6. If retries exceed max_retries, marks job as dead (DLQ).
+7. Sleeps for a short polling interval (e.g., 1 second) and repeats.
 
 This ensures:
-
-No two workers ever process the same job (atomic SQL claim).
-Concurrency is safely handled by SQLite transactions.
-Crash-safe operation: in-progress jobs remain recoverable.
+* No two workers ever process the same job (atomic SQL claim).
+* Concurrency is safely handled by SQLite transactions.
+* Crash-safe operation: in-progress jobs remain recoverable.
 
 ### Concurrency and Locking
 
-SQLite provides built-in row-level atomicity for write transactions.
-
-When a worker “claims” a job, it executes:
-
+* SQLite provides built-in row-level atomicity for write transactions.
+* When a worker “claims” a job, it executes:
 ```sql
 UPDATE jobs
 SET state='processing'
 WHERE id=? AND state='pending';
 ```
-
-Only one worker can successfully update this row — others see no match.
-
-This prevents duplicate processing and race conditions.
-
-Enabling WAL mode further increases read concurrency, allowing multiple workers to poll simultaneously without blocking each other.
+Only **one** worker can successfully update this row — others see no match.
+* This prevents duplicate processing and race conditions.
+* Enabling WAL mode further increases read concurrency, allowing multiple workers to poll simultaneously without blocking each other.
 
 ### Dead Letter Queue (DLQ)
 
 Jobs that exceed their retry limits are marked state='dead' and appear in the DLQ.
 
 You can:
-
-List failed jobs:
-```bash
-queuectl dlq list
-```
-
-Retry them:
-```bash
-queuectl dlq retry job7
-```
+  * List failed jobs:
+  ```bash
+  queuectl dlq list
+  ```
+  * Retry them:
+  ```bash
+  queuectl dlq retry job7
+  ```
 
 This moves the job back to the pending state for reprocessing.
 
@@ -466,6 +430,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
