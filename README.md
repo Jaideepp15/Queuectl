@@ -247,17 +247,6 @@ queuectl status
 
 ---
 
-## System Notes
-
-* Works seamlessly on Linux and Windows  
-* Auto-creates SQLite DB on first run  
-* Background workers tracked via PID file  
-* Thread-safe and crash-safe using SQLite WAL mode  
-* Exponential retry logic: delay = base ^ attempts  
-* Priority + Aging ensure fairness and responsiveness
-
----
-
 ## Tradeoffs / Assumptions
 
 | Area | Description |
@@ -304,6 +293,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
