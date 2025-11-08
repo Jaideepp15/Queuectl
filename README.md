@@ -54,7 +54,7 @@ exec $SHELL
 
 2️. Clone and install locally in editable mode:
 ```bash
-git clone https://github.com/<your-username>/queuectl.git
+git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 pipx install --editable .
 ```
@@ -708,4 +708,5 @@ SQLite keeps the database file open while workers are running, preventing file r
 ### Windows (PowerShell)
 
 <img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
 
