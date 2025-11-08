@@ -286,7 +286,7 @@ queuectl status
 
 ---
 
-## Tradeoffs & Future Improvements
+## Tradeoffs / Assumptions
 
 | Area | Description |
 |------|-------------|
@@ -332,6 +332,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
