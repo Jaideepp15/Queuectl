@@ -148,6 +148,36 @@ queuectl enqueue '{"command":"echo hello"}'
 
 ---
 
+## Running Workers
+
+Workers are long-running processes that continuously poll and execute jobs from the queue.
+
+```bash
+queuectl worker start --count 3
+```
+
+Example output:
+
+```
+[worker 0] pid=1102 started
+[worker 0] picked job job1: echo hello
+hello
+[worker 0] job job1 completed
+[worker 1] pid=1103 started
+[worker 2] pid=1105 started
+```
+
+Keep this terminal open — workers will continue polling for jobs.
+
+Open a second terminal to enqueue and inspect jobs:
+
+```bash
+queuectl enqueue '{"command":"echo another job"}'
+queuectl status
+```
+
+---
+
 ## Priority Scheduling & Aging
 
 ### Priority
@@ -197,36 +227,6 @@ This ensures fair scheduling while honoring job importance.
 | Set config values | `queuectl config set backoff_base 2` |
 | Clear all jobs | `queuectl reset` |
 | Help | `queuectl --help` or `queuectl <command> --help` |
-
----
-
-## Running Workers
-
-Workers are long-running processes that continuously poll and execute jobs from the queue.
-
-```bash
-queuectl worker start --count 3
-```
-
-Example output:
-
-```
-[worker 0] pid=1102 started
-[worker 0] picked job job1: echo hello
-hello
-[worker 0] job job1 completed
-[worker 1] pid=1103 started
-[worker 2] pid=1105 started
-```
-
-Keep this terminal open — workers will continue polling for jobs.
-
-Open a second terminal to enqueue and inspect jobs:
-
-```bash
-queuectl enqueue '{"command":"echo another job"}'
-queuectl status
-```
 
 ---
 
@@ -293,6 +293,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
