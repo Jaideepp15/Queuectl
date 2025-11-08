@@ -230,20 +230,193 @@ This ensures fair scheduling while honoring job importance.
 
 ---
 
-## Architecture Summary
+## Architecture Overview
 
-| Component | Description |
-|-----------|-------------|
-| Persistence | SQLite DB at `~/.queuectl/jobs.db` |
-| Workers | Poll DB, claim pending jobs atomically |
-| Priority | Lower numeric priority executes first |
-| Aging | Pending jobs automatically gain higher priority over time |
-| Concurrency | Managed via SQLite transactions (no race conditions) |
-| Retry | Failed jobs rescheduled with exponential backoff |
-| DLQ | Jobs exceeding max_retries moved to dead state |
-| Job IDs | Auto-generated sequentially (job1, job2, job3...) |
-| Config | Stored in config table (backoff base, retries) |
-| Storage | Fully persistent between restarts |
+queuectl is designed as a lightweight, production-style background job queue system built entirely with Python's standard library and SQLite.
+It models how large-scale distributed job systems like Celery, Sidekiq, and RQ work — but in a single-machine environment.
+
+### System Components
+
+| **Component** | **Description** | 
+|---------------|-----------------|
+| **CLI Interface (queuectl)** | The entry point for all operations. Users enqueue jobs, start workers, check status, and manage configuration via CLI commands. |
+| **SQLite Database (~/.queuectl/jobs.db)** | The central persistent store for all jobs, configurations, and worker state. Ensures data durability across restarts. |
+| **Worker** | ProcessesLong-running background processes that continuously fetch pending jobs from the queue and execute their commands. |
+| **Configuration Table** | Stores global runtime configurations like max_retries, backoff_base, and backoff delay parameters. |
+| **Dead Letter Queue (DLQ)** | Holds jobs that have permanently failed after all retry attempts. Jobs can be retried later manually. |
+
+### Job Lifecycle
+
+Each job moves through well-defined states from creation to completion.
+| **State** | **Description** | 
+|-----------|-----------------|
+| Pending | The job has been enqueued and is waiting to be picked up by a worker. |
+| Processing | A worker has claimed the job and is currently executing its command. |
+| Completed | The job finished successfully (exit code 0). |
+| Failed | The job failed (non-zero exit code) but is still retryable. |
+| Dead | The job exceeded its retry limit and was moved to the Dead Letter Queue (DLQ). |
+
+**State Transitions**
+        ┌────────────┐
+        │  pending   │
+        └─────┬──────┘
+              │ picked by worker
+              ▼
+        ┌────────────┐
+        │ processing │
+        └─────┬──────┘
+              │ success
+    ┌─────────┴─────────┐
+    ▼                   ▼
+┌──────────┐      ┌──────────┐
+│ completed│      │  failed  │
+└──────────┘      └─────┬────┘
+                        │
+              retries < max_retries
+                        │ retry
+                        ▼
+                  pending again
+                        │
+              retries ≥ max_retries
+                        ▼
+                  ┌──────────┐
+                  │   dead   │
+                  └──────────┘
+
+### Job Execution and Priority Scheduling
+
+Each job record includes:
+
+```json
+{
+    "id": "job12",
+    "command": "echo 'Hello World'",
+    "priority": 5,
+    "attempts": 0,
+    "max_retries": 3,
+    "state": "pending",
+    "created_at": "...",
+    "updated_at": "..."
+}
+```
+Jobs are ordered by priority (ascending):
+
+Lower priority value = higher priority.
+Default priority is 5 (medium).
+Range: 1 (highest) → 10 (lowest).
+
+If two jobs share the same priority, the earlier-created job is executed first (FIFO order).
+Aging is implemented to prevent starvation:
+
+Pending jobs automatically gain higher priority (priority number decreases) the longer they wait in the queue.
+
+### Retry Mechanism and Backoff Strategy
+
+When a job fails, it is retried automatically with exponential backoff, calculated as:
+delay = backoff_base ^ attempts
+For example, if backoff_base=2 and the job failed twice:
+
+Attempt 1 → retry after 2 seconds
+Attempt 2 → retry after 4 seconds
+Attempt 3 → moved to DLQ (if max_retries=3)
+
+If a job exceeds its retry count, it transitions from failed → dead, and becomes visible in the Dead Letter Queue.
+
+### Data Persistence (SQLite)
+
+All jobs, configs, and metadata are persisted in SQLite at:
+**Linux:**
+```bash
+~/.queuectl/jobs.db
+```
+**Windows:**
+```cmd
+%USERPROFILE%\.queuectl\jobs.db
+```
+Tables:
+
+jobs — stores all job records with states, timestamps, and retry data.
+config — stores runtime configuration values (backoff_base, default_max_retries, etc.).
+
+Persistence ensures:
+
+Jobs survive process restarts or system shutdowns.
+DLQ entries can be retried across sessions.
+Workers can safely resume after crashes.
+
+SQLite is configured in WAL (Write-Ahead Logging) mode for better concurrency and performance:
+sqlPRAGMA journal_mode=WAL;
+PRAGMA synchronous=NORMAL;
+This allows multiple workers to read and write concurrently without corruption or blocking.
+
+### Worker Logic
+
+Workers are implemented as independent background processes (multiprocessing).
+Each worker repeatedly:
+
+Connects to the shared SQLite DB.
+Atomically fetches the next highest-priority pending job:
+
+```sql
+    SELECT * FROM jobs
+   WHERE state='pending' AND run_after <= current_timestamp
+   ORDER BY priority ASC, created_at ASC
+   LIMIT 1;
+```
+
+Marks it as processing inside a transaction.
+Executes the job's shell command via subprocess.run().
+Updates the job record with:
+
+state='completed' if success
+state='failed' if non-zero exit code
+attempts++, run_after set to next backoff delay
+
+
+If retries exceed max_retries, marks job as dead (DLQ).
+Sleeps for a short polling interval (e.g., 1 second) and repeats.
+
+This ensures:
+
+No two workers ever process the same job (atomic SQL claim).
+Concurrency is safely handled by SQLite transactions.
+Crash-safe operation: in-progress jobs remain recoverable.
+
+### Concurrency and Locking
+
+SQLite provides built-in row-level atomicity for write transactions.
+
+When a worker “claims” a job, it executes:
+
+```sql
+UPDATE jobs
+SET state='processing'
+WHERE id=? AND state='pending';
+```
+
+Only one worker can successfully update this row — others see no match.
+
+This prevents duplicate processing and race conditions.
+
+Enabling WAL mode further increases read concurrency, allowing multiple workers to poll simultaneously without blocking each other.
+
+### Dead Letter Queue (DLQ)
+
+Jobs that exceed their retry limits are marked state='dead' and appear in the DLQ.
+
+You can:
+
+List failed jobs:
+```bash
+queuectl dlq list
+```
+
+Retry them:
+```bash
+queuectl dlq retry job7
+```
+
+This moves the job back to the pending state for reprocessing.
 
 ---
 
@@ -293,6 +466,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
