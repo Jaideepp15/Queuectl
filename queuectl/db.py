@@ -1,6 +1,7 @@
 import sqlite3, json, time
-from .config import DB_PATH, DEFAULT_MAX_RETRIES, DEFAULT_BACKOFF_BASE
+from .config import DB_PATH, DEFAULT_MAX_RETRIES, DEFAULT_BACKOFF_BASE,PID_PATH
 from .utils import now_iso
+from pathlib import Path
 
 class DB:
     def __init__(self, path=DB_PATH):
@@ -179,3 +180,24 @@ class DB:
         cur.execute('SELECT * FROM jobs WHERE id=?', (job_id,))
         r = cur.fetchone()
         return dict(r) if r else None
+    
+    def reset(self):
+        """Safely reset the database: only allowed when no workers are running."""
+        # Check if PID file exists
+        if PID_PATH.exists():
+            with open(PID_PATH, 'r') as f:
+                pids = json.load(f)
+            alive = [pid for pid in pids if Path(f"/proc/{pid}").exists()]
+            if alive:
+                print(f"Cannot reset: {len(alive)} worker(s) still running (PIDs: {alive})")
+                print("Stop all workers first using: queuectl worker stop")
+                return
+
+        c = self.conn.cursor()
+        c.execute("DELETE FROM jobs")
+        c.execute("DELETE FROM config")
+        c.execute('INSERT OR IGNORE INTO config(key,value) VALUES(?,?)', ('backoff_base', str(DEFAULT_BACKOFF_BASE)))
+        c.execute('INSERT OR IGNORE INTO config(key,value) VALUES(?,?)', ('default_max_retries', str(DEFAULT_MAX_RETRIES)))
+        self.conn.commit()
+        print("Queue reset successful: all jobs and configurations cleared.")
+
