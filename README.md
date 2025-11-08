@@ -54,7 +54,7 @@ Queuectl/
 
 #### Option 1 - Installing in User Mode
 
-1️) Install `pipx` via apt:
+1️. Install `pipx` via apt:
 ```bash
 sudo apt update
 sudo apt install -y pipx
@@ -62,7 +62,7 @@ python3 -m pipx ensurepath
 exec $SHELL
 ```
 
-2️) Clone and install locally in editable mode:
+2️. Clone and install locally in editable mode:
 ```bash
 git clone https://github.com/<your-username>/queuectl.git
 cd queuectl
@@ -73,20 +73,20 @@ pipx installs your CLI in an isolated environment and links it globally — no n
 
 #### Option 2 - Installing in a Virtual Enviornement
 
-1️ Clone the repository:
+1️. Clone the repository:
 ```bash
 git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
-2️ Create a virtual environment:
+2️. Create a virtual environment:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-3️ Install in editable mode:
+3️. Install in editable mode:
 
 ```bash
 pip install -e .
@@ -100,21 +100,21 @@ queuectl --help
 
 ### 🟦 On Windows
 
-1️ Clone the repository:
+1️. Clone the repository:
 
 ```powershell
 git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
-2️ (Optional) Create a virtual environment:
+2️. (Optional) Create a virtual environment:
 
 ```powershell
 python -m venv venv
 venv\Scripts\activate
 ```
 
-3️ Install in editable mode:
+3️. Install in editable mode:
 
 ```powershell
 pip install -e .
@@ -205,7 +205,6 @@ Workers are long-running processes that continuously poll and execute jobs from 
 
 ### On Linux / Ubuntu / WSL
 
-#### Option 1 — Foreground Workers (Interactive)
 ```bash
 queuectl worker start --count 3
 ```
@@ -230,28 +229,7 @@ queuectl enqueue '{"command":"echo another job"}'
 queuectl status
 ```
 
-#### Option 2 — Background (Daemon) Workers
-
-Run workers as background services:
-
-```bash
-queuectl worker start --count 3 --daemon
-```
-
-Example output:
-
-```
-Started worker pid=1234
-Started worker pid=1235
-Started worker pid=1236
-Saved PIDs to ~/.queuectl/pids.json
-```
-
-Stop workers gracefully:
-
-```bash
-queuectl worker stop
-```
+---
 
 ### On Windows
 
@@ -354,6 +332,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
