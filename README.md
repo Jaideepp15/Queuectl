@@ -166,6 +166,21 @@ queuectl enqueue '{"command":"echo another job"}'
 queuectl status
 ```
 
+**Note**
+The format for providing the job as a JSON document varies depending on the terminal you are using to run queuectl
+* **Powershell**
+  ```powershell
+  queuectl enqueue '{""command"":""echo hello"",""max-retries"":2}'
+  ```
+* **Command Prompt (CMD)**
+  ```cmd
+  queuectl enqueue "{""command"":""echo hello"",""max-retries"":2}"
+  ```
+* **Linux shell / WSL Shell**
+  ```bash
+  queuectl enqueue '{"command":"echo hello","max-retries":2}'
+  ```
+
 ---
 
 ## Installation Summary
@@ -708,5 +723,6 @@ SQLite keeps the database file open while workers are running, preventing file r
 ### Windows (PowerShell)
 
 <img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
 
 
