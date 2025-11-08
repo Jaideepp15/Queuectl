@@ -196,6 +196,7 @@ This ensures fair scheduling while honoring job importance.
 | Retry DLQ job | `queuectl dlq retry job1` |
 | Set config values | `queuectl config set backoff_base 2` |
 | Clear all jobs | `queuectl reset` |
+| Help | `queuectl --help` or `queuectl <command> --help` |
 
 ---
 
@@ -332,6 +333,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
