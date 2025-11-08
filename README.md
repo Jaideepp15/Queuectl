@@ -300,8 +300,8 @@ Windows:
 %USERPROFILE%\.queuectl\jobs.db
 ```
 Tables:
-jobs — stores all job records with states, timestamps, and retry data.
-config — stores runtime configuration values (backoff_base, default_max_retries, etc.).
+* jobs — stores all job records with states, timestamps, and retry data.
+* config — stores runtime configuration values (backoff_base, default_max_retries, etc.).
 
 Persistence ensures:
 * Jobs survive process restarts or system shutdowns.
@@ -423,6 +423,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
