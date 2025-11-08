@@ -10,6 +10,8 @@ It's designed to be compact, readable, and production-like — a great example o
 
 ✅ Persistent job queue using SQLite  
 ✅ Multiple concurrent workers  
+✅ Priority scheduling (1–10; lower = higher priority)  
+✅ Automatic aging to prevent starvation  
 ✅ Exponential backoff for retries  
 ✅ Automatic Dead Letter Queue (DLQ) for failed jobs  
 ✅ Configurable retry and backoff values  
@@ -52,11 +54,11 @@ queuectl/
 
 1️⃣ Clone the repository:
 ```bash
-git clone https://github.com/<your-username>/queuectl.git
+git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
-2️⃣ (Recommended) Create a virtual environment:
+2️⃣ Create a virtual environment:
 
 ```bash
 python3 -m venv .venv
@@ -84,7 +86,7 @@ git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
-2️⃣ (Optional but recommended) Create a virtual environment:
+2️⃣ (Optional) Create a virtual environment:
 
 ```powershell
 python -m venv venv
@@ -117,11 +119,48 @@ queuectl --help
 queuectl = "queuectl.main:main"
 ```
 
-After installation (`pip install -e .`), you can invoke it directly from any terminal:
+After installation (`pip install -e .` or `pipx install --editable .`), you can invoke it directly from any terminal:
 
 ```bash
 queuectl enqueue '{"command":"echo hello"}'
 ```
+
+---
+
+## 🧩 Priority Scheduling & Aging
+
+### 🔹 Priority
+
+Each job can be assigned a priority from **1** to **10**:
+
+* 1 = **Highest priority**
+
+* 10 = **Lowest priority**
+
+* Default = **5**
+
+Jobs with a lower priority number run first.
+If two jobs share the same priority, the earlier created_at job executes first.
+
+### 🔹 Aging (Anti-Starvation)
+
+To prevent starvation of low-priority jobs:
+
+* Every minute a job remains pending, its priority improves (priority number decreases).
+
+* It won’t drop below priority 1.
+
+* Eventually, long-waiting jobs will bubble up and be executed.
+
+Example:
+
+| **Job Id** | **Initial Priority** | **Wait time(mins)** | **Aged Priority** |
+|------------|----------------------|---------------------|-------------------|
+| job1 | 9 | 3 | 6 |
+| job2 | 5 | 2 | 3 |
+| job3 | 2 | 1| 1 |
+
+This ensures fair scheduling while honoring job importance.
 
 ---
 
@@ -195,7 +234,6 @@ queuectl worker stop
 
 ### 🟦 On Windows
 
-#### ▶ Option 1 — Foreground Workers (Interactive)
 ```powershell
 queuectl worker start --count 3
 ```
@@ -219,47 +257,6 @@ queuectl enqueue '{"command":"echo another job"}'
 queuectl status
 ```
 
-#### ▶ Option 2 — Background via New Window
-
-Create a `.bat` file named `start_workers.bat` in your project folder:
-
-```bat
-@echo off
-start "Queue Workers" cmd /c "queuectl worker start --count 3"
-```
-
-Run it by double-clicking or typing:
-
-```bat
-start_workers.bat
-```
-
-To stop:
-
-```powershell
-queuectl worker stop
-```
-
-Or close the "Queue Workers" window.
-
-#### ▶ Option 3 — PowerShell Background Job
-
-```powershell
-Start-Job { queuectl worker start --count 3 }
-```
-
-List running jobs:
-
-```powershell
-Get-Job
-```
-
-Stop all background jobs:
-
-```powershell
-Stop-Job *
-```
-
 ---
 
 ## 🧠 Architecture Summary
@@ -268,6 +265,8 @@ Stop-Job *
 |-----------|-------------|
 | Persistence | SQLite DB at `~/.queuectl/jobs.db` |
 | Workers | Poll DB, claim pending jobs atomically |
+| Priority | Lower numeric priority executes first |
+| Aging | Pending jobs automatically gain higher priority over time |
 | Concurrency | Managed via SQLite transactions (no race conditions) |
 | Retry | Failed jobs rescheduled with exponential backoff |
 | DLQ | Jobs exceeding max_retries moved to dead state |
@@ -284,6 +283,7 @@ Stop-Job *
 ✅ Background workers tracked via PID file  
 ✅ Thread-safe and crash-safe using SQLite WAL mode  
 ✅ Exponential retry logic: delay = base ^ attempts  
+✅ Priority + Aging ensure fairness and responsiveness
 
 ---
 
@@ -295,7 +295,7 @@ Stop-Job *
 | Scaling | For distributed queues, replace DB with PostgreSQL or Redis |
 | Polling | Could be improved with event-driven triggers |
 | Background mode | PID files work locally; use systemd/supervisor for production |
-| Extensions | Could add priorities, scheduled jobs, or a web dashboard |
+| Extensions | Could add job dependencies, scheduling, or a web dashboard |
 
 ---
 
@@ -322,8 +322,7 @@ queuectl dlq list
 |----------|---------|
 | Ubuntu (venv) | `python3 -m venv .venv && source .venv/bin/activate && pip install -e .` |
 | Windows (venv) | `python -m venv venv && venv\Scripts\activate && pip install -e .` |
-| Ubuntu (user mode) | `python3 -m pip install --user -e . && export PATH="$HOME/.local/bin:$PATH"` |
-| Global (unsafe) | `sudo python3 -m pip install -e . --break-system-packages` (not recommended) |
+| Ubuntu (user mode) | `sudo apt install -y pipx && pipx install --editable .` |
 
 ---
 
@@ -333,5 +332,6 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
