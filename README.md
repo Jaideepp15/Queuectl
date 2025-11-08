@@ -1,4 +1,4 @@
-# 🧰 Queuectl — A CLI-based background job queue system (Python)
+# Queuectl — A CLI-based background job queue system (Python)
 
 A CLI-based background job queue system built with **SQLite persistence**, **multi-worker support**, **automatic retries with exponential backoff**, and a **Dead Letter Queue (DLQ)**.
 
@@ -6,55 +6,55 @@ It's designed to be compact, readable, and production-like — a great example o
 
 ---
 
-## 🚀 Features
+## Features
 
-✅ Persistent job queue using SQLite  
-✅ Multiple concurrent workers  
-✅ Priority scheduling (1–10; lower = higher priority)  
-✅ Automatic aging to prevent starvation  
-✅ Exponential backoff for retries  
-✅ Automatic Dead Letter Queue (DLQ) for failed jobs  
-✅ Configurable retry and backoff values  
-✅ Sequential auto-generated unique job IDs (`job1`, `job2`, …)  
-✅ Cross-platform: works on both Windows and Ubuntu  
-✅ No external dependencies — pure Python standard library  
+* Persistent job queue using SQLite  
+* Multiple concurrent workers  
+* Priority scheduling (1–10; lower = higher priority)  
+* Automatic aging to prevent starvation  
+* Exponential backoff for retries  
+* Automatic Dead Letter Queue (DLQ) for failed jobs  
+* Configurable retry and backoff values  
+* Sequential auto-generated unique job IDs (`job1`, `job2`, …)  
+* Cross-platform: works on both Windows and Ubuntu  
+* No external dependencies — pure Python standard library  
 
 ---
 
-## 🧩 Project Structure
+## Project Structure
 
 ```
-queuectl/
-├── __init__.py
-├── main.py              # CLI entry point
-├── db.py                # SQLite DB management
-├── worker.py            # Worker lifecycle & job execution
-├── cli_commands.py      # CLI command implementations
-├── utils.py             # Helpers, PID management, timestamps
-├── config.py            # Constants and paths
+Queuectl/
+├──queuectl/
+  ├── main.py              # CLI entry point
+  ├── db.py                # SQLite DB management
+  ├── worker.py            # Worker lifecycle & job execution
+  ├── cli_commands.py      # CLI command implementations
+  ├── utils.py             # Helpers, PID management, timestamps
+  ├── config.py            # Constants and paths
 ├── pyproject.toml       # Project metadata and install configuration
 └── README.md
 ```
 
 ---
 
-## 🐍 Requirements
+## Requirements
 
 - **Python 3.8+**
 - No external dependencies
 - Works on:
-  - ✅ Ubuntu / WSL (Linux)
-  - ✅ Windows 10/11 (PowerShell or Command Prompt)
+  - Ubuntu / WSL (Linux)
+  -  Windows 10/11 (PowerShell or Command Prompt)
 
 ---
 
-## ⚙️ Installation
+## Installation
 
-### 🟩 On Ubuntu / WSL
+### On Ubuntu / WSL
 
-#### ▶ Option 1 - Installing in User Mode
+#### Option 1 - Installing in User Mode
 
-1️⃣ Install `pipx` via apt:
+1️) Install `pipx` via apt:
 ```bash
 sudo apt update
 sudo apt install -y pipx
@@ -62,7 +62,7 @@ python3 -m pipx ensurepath
 exec $SHELL
 ```
 
-2️⃣ Clone and install locally in editable mode:
+2️) Clone and install locally in editable mode:
 ```bash
 git clone https://github.com/<your-username>/queuectl.git
 cd queuectl
@@ -71,28 +71,28 @@ pipx install --editable .
 
 pipx installs your CLI in an isolated environment and links it globally — no need to activate a virtual environment manually.
 
-#### ▶ Option 2 - Installing in a Virtual Enviornement
+#### Option 2 - Installing in a Virtual Enviornement
 
-1️⃣ Clone the repository:
+1️ Clone the repository:
 ```bash
 git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
-2️⃣ Create a virtual environment:
+2️ Create a virtual environment:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-3️⃣ Install in editable mode:
+3️ Install in editable mode:
 
 ```bash
 pip install -e .
 ```
 
-✅ Verify installation:
+Verify installation:
 
 ```bash
 queuectl --help
@@ -100,27 +100,27 @@ queuectl --help
 
 ### 🟦 On Windows
 
-1️⃣ Clone the repository:
+1️ Clone the repository:
 
 ```powershell
 git clone https://github.com/Jaideepp15/queuectl.git
 cd queuectl
 ```
 
-2️⃣ (Optional) Create a virtual environment:
+2️ (Optional) Create a virtual environment:
 
 ```powershell
 python -m venv venv
 venv\Scripts\activate
 ```
 
-3️⃣ Install in editable mode:
+3️ Install in editable mode:
 
 ```powershell
 pip install -e .
 ```
 
-✅ Verify installation:
+Verify installation:
 
 ```powershell
 queuectl --help
@@ -131,7 +131,7 @@ queuectl --help
 
 ---
 
-## 🧠 How the CLI Works
+## How the CLI Works
 
 `queuectl` is exposed automatically as a console script via `pyproject.toml`:
 
@@ -148,9 +148,9 @@ queuectl enqueue '{"command":"echo hello"}'
 
 ---
 
-## 🧩 Priority Scheduling & Aging
+## Priority Scheduling & Aging
 
-### 🔹 Priority
+### Priority
 
 Each job can be assigned a priority from **1** to **10**:
 
@@ -163,7 +163,7 @@ Each job can be assigned a priority from **1** to **10**:
 Jobs with a lower priority number run first.
 If two jobs share the same priority, the earlier created_at job executes first.
 
-### 🔹 Aging (Anti-Starvation)
+### Aging (Anti-Starvation)
 
 To prevent starvation of low-priority jobs:
 
@@ -185,7 +185,7 @@ This ensures fair scheduling while honoring job importance.
 
 ---
 
-## 🧩 Example Commands
+## Example Commands
 
 | Action | Command |
 |--------|---------|
@@ -199,13 +199,13 @@ This ensures fair scheduling while honoring job importance.
 
 ---
 
-## ⚙️ Running Workers
+## Running Workers
 
 Workers are long-running processes that continuously poll and execute jobs from the queue.
 
-### 🧩 On Linux / Ubuntu / WSL
+### On Linux / Ubuntu / WSL
 
-#### ▶ Option 1 — Foreground Workers (Interactive)
+#### Option 1 — Foreground Workers (Interactive)
 ```bash
 queuectl worker start --count 3
 ```
@@ -230,7 +230,7 @@ queuectl enqueue '{"command":"echo another job"}'
 queuectl status
 ```
 
-#### ▶ Option 2 — Background (Daemon) Workers
+#### Option 2 — Background (Daemon) Workers
 
 Run workers as background services:
 
@@ -253,7 +253,7 @@ Stop workers gracefully:
 queuectl worker stop
 ```
 
-### 🟦 On Windows
+### On Windows
 
 ```powershell
 queuectl worker start --count 3
@@ -280,7 +280,7 @@ queuectl status
 
 ---
 
-## 🧠 Architecture Summary
+## Architecture Summary
 
 | Component | Description |
 |-----------|-------------|
@@ -297,18 +297,18 @@ queuectl status
 
 ---
 
-## ⚙️ System Notes
+## System Notes
 
-✅ Works seamlessly on Linux and Windows  
-✅ Auto-creates SQLite DB on first run  
-✅ Background workers tracked via PID file  
-✅ Thread-safe and crash-safe using SQLite WAL mode  
-✅ Exponential retry logic: delay = base ^ attempts  
-✅ Priority + Aging ensure fairness and responsiveness
+* Works seamlessly on Linux and Windows  
+* Auto-creates SQLite DB on first run  
+* Background workers tracked via PID file  
+* Thread-safe and crash-safe using SQLite WAL mode  
+* Exponential retry logic: delay = base ^ attempts  
+* Priority + Aging ensure fairness and responsiveness
 
 ---
 
-## 🧱 Tradeoffs & Future Improvements
+## Tradeoffs & Future Improvements
 
 | Area | Description |
 |------|-------------|
@@ -320,7 +320,7 @@ queuectl status
 
 ---
 
-## 🧪 Example Workflow
+## Example Workflow
 
 **Terminal 1 (start workers)**
 ```bash
@@ -337,7 +337,7 @@ queuectl dlq list
 
 ---
 
-## 📦 Installation Summary
+## Installation Summary
 
 | Platform | Command |
 |----------|---------|
@@ -348,12 +348,13 @@ queuectl dlq list
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Jaideep Palaniselvan**  
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
