@@ -50,7 +50,7 @@ Queuectl/
 
 ## Installation
 
-### On Ubuntu / WSL (Recommended OS)
+### On Linux (Recommended OS)
 
 #### Option 1 - Installing in User Mode
 
@@ -175,6 +175,17 @@ Open a second terminal to enqueue and inspect jobs:
 queuectl enqueue '{"command":"echo another job"}'
 queuectl status
 ```
+
+---
+
+## Installation Summary
+
+| Platform | Command |
+|----------|---------|
+| Ubuntu (user mode) | `sudo apt install -y pipx && python3 -m pipx ensurepath && pipx install --editable .` |
+| Ubuntu (venv) | `python3 -m venv .venv && source .venv/bin/activate && pip install -e .` |
+| Windows (user mode) | `pip install -e .` |
+| Windows (venv) | `python -m venv venv && venv\Scripts\activate && pip install -e .` |
 
 ---
 
@@ -389,6 +400,90 @@ You can:
 
 ---
 
+## Testing Instructions
+
+This project includes automated integration tests that verify all core functionalities of queuectl, including job execution, retries, DLQ handling, concurrency, graceful failures, and data persistence.
+
+Before running any test script, ensure you have at least one terminal running workers:
+```bash
+queuectl worker start --count 3 --daemon
+```
+Then, open another terminal to execute the tests.
+
+### On Linux
+
+1. Set Execution Permissions
+Before running the test script for the first time:
+```bash
+chmod +x test_queuectl.sh
+```
+
+2. Run the Test Script
+```bash
+./test_queuectl.sh
+```
+
+This script performs the following verifications:
+* Basic job execution — ensures a simple job runs and completes successfully.
+* Retry and DLQ logic — failed jobs are retried with exponential backoff and moved to the Dead Letter Queue after exceeding max_retries.
+* DLQ retry — ensures jobs from the DLQ can be retried and either succeed or fail gracefully.
+* Worker concurrency — multiple workers process jobs simultaneously without overlap.
+* Graceful failure — invalid commands are correctly marked as failed.
+* Persistence test — simulates a restart by removing and restoring the database, ensuring job data persists.
+* Reset test — clears all jobs and verifies the queue is empty.
+
+### On Windows (PowerShell)
+
+1. Allow Script Execution
+PowerShell blocks custom scripts by default.
+To enable it temporarily for your session, run:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+```
+This allows PowerShell to run local scripts without changing global security settings.
+
+2. Run the Test Script
+```powershell
+.\test_queuectl.ps1
+```
+
+This PowerShell test validates:
+* Basic job execution — ensures a simple job runs and completes successfully.
+* Retry and DLQ logic — failed jobs are retried with exponential backoff and moved to the Dead Letter Queue after exceeding max_retries.
+* DLQ retry — ensures jobs from the DLQ can be retried and either succeed or fail gracefully.
+* Worker concurrency — multiple workers process jobs simultaneously without overlap.
+* Graceful failure — invalid commands are correctly marked as failed.
+* Reset test — clears all jobs and verifies the queue is empty.
+
+**Note on Persistence Test (Windows)**
+* The persistence test is not automated on Windows because of NTFS file-locking rules —
+SQLite keeps the database file open while workers are running, preventing file replacement.
+* However, you can verify persistence manually:
+  1. Run a few jobs:
+  ```powershell
+  queuectl enqueue '{""command"":""echo Persistent test""}'
+  ```
+  2. Close the PowerShell window entirely.
+  3. Open a new PowerShell window and run:
+  ```powershell
+  queuectl list
+  ```
+  4. You should still see your previously enqueued jobs
+* That confirms persistent storage is working correctly on Windows.
+
+---
+
+## Test Output
+
+### Linux
+
+<img width="1205" height="897" alt="image" src="https://github.com/user-attachments/assets/1a44813b-bcf5-466e-bb4b-a16be2095095" />
+
+### Windows (PowerShell)
+
+<img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
+
 ## Example Workflow
 
 **Terminal 1 (start workers)**
@@ -406,23 +501,6 @@ queuectl dlq list
 
 ---
 
-## Installation Summary
-
-| Platform | Command |
-|----------|---------|
-| Ubuntu (user mode) | `sudo apt install -y pipx && python3 -m pipx ensurepath && pipx install --editable .` |
-| Ubuntu (venv) | `python3 -m venv .venv && source .venv/bin/activate && pip install -e .` |
-| Windows (user mode) | `pip install -e .` |
-| Windows (venv) | `python -m venv venv && venv\Scripts\activate && pip install -e .` |
-
----
-
-## Author
-
-**Jaideep Palaniselvan**  
-Amrita Vishwa Vidyapeetham, Coimbatore  
-
-📧 jaideepp15@gmail.com
 
 
 
