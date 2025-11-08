@@ -648,7 +648,7 @@ This project includes automated integration tests that verify all core functiona
 
 Before running any test script, ensure you have at least one terminal running workers:
 ```bash
-queuectl worker start --count 3 --daemon
+queuectl worker start --count 3
 ```
 Then, open another terminal to execute the tests.
 
@@ -724,6 +724,7 @@ SQLite keeps the database file open while workers are running, preventing file r
 ### Windows (PowerShell)
 
 <img width="1199" height="860" alt="image" src="https://github.com/user-attachments/assets/87b3c121-7bcc-43f2-9e89-8e1502cfb0d3" />
+
 
 
 
