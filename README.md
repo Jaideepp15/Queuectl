@@ -52,6 +52,27 @@ queuectl/
 
 ### 🟩 On Ubuntu / WSL
 
+#### ▶ Option 1 - Installing in User Mode
+
+1️⃣ Install `pipx` via apt:
+```bash
+sudo apt update
+sudo apt install -y pipx
+python3 -m pipx ensurepath
+exec $SHELL
+```
+
+2️⃣ Clone and install locally in editable mode:
+```bash
+git clone https://github.com/<your-username>/queuectl.git
+cd queuectl
+pipx install --editable .
+```
+
+pipx installs your CLI in an isolated environment and links it globally — no need to activate a virtual environment manually.
+
+#### ▶ Option 2 - Installing in a Virtual Enviornement
+
 1️⃣ Clone the repository:
 ```bash
 git clone https://github.com/Jaideepp15/queuectl.git
@@ -320,9 +341,10 @@ queuectl dlq list
 
 | Platform | Command |
 |----------|---------|
+| Ubuntu (user mode) | `sudo apt install -y pipx && python3 -m pipx ensurepath && pipx install --editable .` |
 | Ubuntu (venv) | `python3 -m venv .venv && source .venv/bin/activate && pip install -e .` |
+| Windows (user mode) | `pip install -e .` |
 | Windows (venv) | `python -m venv venv && venv\Scripts\activate && pip install -e .` |
-| Ubuntu (user mode) | `sudo apt install -y pipx && pipx install --editable .` |
 
 ---
 
@@ -332,6 +354,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
