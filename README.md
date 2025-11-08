@@ -178,18 +178,6 @@ queuectl status
 
 ---
 
-Example:
-
-| **Job Id** | **Initial Priority** | **Wait time(mins)** | **Aged Priority** |
-|------------|----------------------|---------------------|-------------------|
-| job1 | 9 | 3 | 6 |
-| job2 | 5 | 2 | 3 |
-| job3 | 2 | 1| 1 |
-
-This ensures fair scheduling while honoring job importance.
-
----
-
 ## Example Commands
 
 | Action | Command |
@@ -209,7 +197,7 @@ This ensures fair scheduling while honoring job importance.
 
 Queuectl is designed as a lightweight, production-style background job queue system built entirely with Python's standard library and SQLite.
 
-### System Components
+### 1. System Components
 
 | **Component** | **Description** | 
 |---------------|-----------------|
@@ -219,7 +207,7 @@ Queuectl is designed as a lightweight, production-style background job queue sys
 | **Configuration Table** | Stores global runtime configurations like max_retries, backoff_base, and backoff delay parameters. |
 | **Dead Letter Queue (DLQ)** | Holds jobs that have permanently failed after all retry attempts. Jobs can be retried later manually. |
 
-### Job Lifecycle
+### 2. Job Lifecycle
 
 Each job moves through well-defined states from creation to completion.
 | **State** | **Description** | 
@@ -259,7 +247,7 @@ Each job moves through well-defined states from creation to completion.
                   └──────────┘
 ```
 
-### Job Execution and Priority Scheduling
+### 3. Job Execution and Priority Scheduling
 
 Each job record includes:
 
@@ -288,7 +276,7 @@ Aging is implemented to prevent starvation:
 - Every minute a job remains pending, its priority improves (priority number decreases).
 - Eventually, long-waiting jobs will bubble up and be executed.
 
-### Retry Mechanism and Backoff Strategy
+### 4. Retry Mechanism and Backoff Strategy
 
 When a job fails, it is retried automatically with exponential backoff, calculated as:
 delay = backoff_base ^ attempts
@@ -300,7 +288,7 @@ Attempt 3 → moved to DLQ (if max_retries=3)
 
 If a job exceeds its retry count, it transitions from failed → dead, and becomes visible in the Dead Letter Queue.
 
-### Data Persistence (SQLite)
+### 5. Data Persistence (SQLite)
 
 All jobs, configs, and metadata are persisted in SQLite at:
 Linux:
@@ -327,7 +315,7 @@ PRAGMA synchronous=NORMAL;
 ```
 This allows multiple workers to read and write concurrently without corruption or blocking.
 
-### Worker Logic
+### 6. Worker Logic
 
 Workers are implemented as independent background processes (multiprocessing).
 Each worker repeatedly:
@@ -353,7 +341,7 @@ This ensures:
 * Concurrency is safely handled by SQLite transactions.
 * Crash-safe operation: in-progress jobs remain recoverable.
 
-### Concurrency and Locking
+### 7. Concurrency and Locking
 
 * SQLite provides built-in row-level atomicity for write transactions.
 * When a worker “claims” a job, it executes:
@@ -366,7 +354,7 @@ Only **one** worker can successfully update this row — others see no match.
 * This prevents duplicate processing and race conditions.
 * Enabling WAL mode further increases read concurrency, allowing multiple workers to poll simultaneously without blocking each other.
 
-### Dead Letter Queue (DLQ)
+### 8. Dead Letter Queue (DLQ)
 
 Jobs that exceed their retry limits are marked state='dead' and appear in the DLQ.
 
@@ -430,6 +418,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
