@@ -68,3 +68,12 @@ def cmd_config_get(args):
         print('Not set')
     else:
         print(val)
+
+def cmd_reset(args):
+    confirm = input("This will stop all workers and delete all jobs. Continue? (y/N): ")
+    if confirm.lower() != 'y':
+        print("Reset cancelled.")
+        return
+    stop_workers()
+    db = DB()
+    db.reset()
