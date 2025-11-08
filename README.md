@@ -98,7 +98,7 @@ Verify installation:
 queuectl --help
 ```
 
-### 🟦 On Windows
+### On Windows
 
 1️. Clone the repository:
 
@@ -332,6 +332,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
