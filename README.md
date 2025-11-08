@@ -21,23 +21,6 @@ It's designed to be compact, readable, and production-like — a great example o
 
 ---
 
-## Project Structure
-
-```
-Queuectl/
-├──queuectl/
-  ├── main.py              # CLI entry point
-  ├── db.py                # SQLite DB management
-  ├── worker.py            # Worker lifecycle & job execution
-  ├── cli_commands.py      # CLI command implementations
-  ├── utils.py             # Helpers, PID management, timestamps
-  ├── config.py            # Constants and paths
-├── pyproject.toml       # Project metadata and install configuration
-└── README.md
-```
-
----
-
 ## Requirements
 
 - **Python 3.8+**
@@ -189,7 +172,7 @@ queuectl status
 
 ---
 
-## Example Commands
+## Commands
 
 | Action | Command |
 |--------|---------|
@@ -202,6 +185,242 @@ queuectl status
 | Clear all jobs | `queuectl reset` |
 | Help | `queuectl --help` or `queuectl <command> --help` |
 
+---
+
+## Example Usage
+
+### 1. View default configuration
+
+Command:
+```bash
+queuectl config get default_max_retries
+queuectl config get backoff_base
+```
+Output:
+```bash
+3
+2
+```
+
+### 2. Modify configuration values
+
+Command:
+```bash
+queuectl config set backoff_base 3
+queuectl config set default_max_retries 4
+```
+Output:
+```bash
+OK
+OK
+```
+Verify the changes:
+```bash
+queuectl config get default_max_retries
+queuectl config get backoff_base
+```
+Output:
+```bash
+4
+3
+```
+
+### 3. Enqueue a simple job
+
+Command:
+```bash
+queuectl enqueue '{"command":"echo Hello World"}'
+```
+Output:
+```bash
+Enqueued job job1
+```
+
+### 4. Start workers
+
+**Note:** Execute this command in a new terminal
+Command:
+```bash
+queuectl worker start --count 2
+```
+Output:
+```bash
+Started worker pid=4408
+[worker 0] pid=4408 started
+Started worker pid=4409
+Saved PIDs to /home/jaide/.queuectl/pids.json
+[worker 0] picked job job1: echo Hello World
+Hello World
+[worker 0] job job1 completed
+[worker 1] pid=4409 started
+```
+
+### 5. Verify job completion
+
+Command:
+```bash
+queuectl status
+```
+Output:
+```bash
+Job states:
+  pending: 0
+  processing: 0
+  failed: 0
+  completed: 1
+  dead: 0
+Background worker PIDs: [4408, 4409]
+```
+The job executed successfully and moved to the completed state.
+
+### 6. Test job priorities
+
+Command:
+```bash
+queuectl enqueue '{"command":"echo High Priority Job","priority":1}'
+queuectl enqueue '{"command":"echo Medium Priority Job","priority":5}'
+queuectl enqueue '{"command":"echo Low Priority Job","priority":9}'
+```
+Expected Output:
+```bash
+Enqueued job job2
+Enqueued job job3
+Enqueued job job4
+```
+
+Command:
+```bash
+queuectl list
+```
+Output:
+```bash
+{"id": "job2", "command": "echo High Priority Job", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 1, "created_at": "2025-11-08T12:35:50.089525+00:00", "updated_at": "2025-11-08T12:35:50.982301+00:00", "run_after": 1762605350, "last_error": null}
+{"id": "job1", "command": "echo Hello World", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 5, "created_at": "2025-11-08T12:33:02.155330+00:00", "updated_at": "2025-11-08T12:33:56.393488+00:00", "run_after": 1762605182, "last_error": null}
+{"id": "job3", "command": "echo Medium Priority Job", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 5, "created_at": "2025-11-08T12:35:58.310338+00:00", "updated_at": "2025-11-08T12:35:58.973965+00:00", "run_after": 1762605358, "last_error": null}
+{"id": "job4", "command": "echo Low Priority Job", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 9, "created_at": "2025-11-08T12:36:06.510093+00:00", "updated_at": "2025-11-08T12:36:08.165250+00:00", "run_after": 1762605366, "last_error": null}
+```
+This demonstrates priority-based scheduling.
+
+### 7. Enqueue a failing job
+
+Command:
+```bash
+queuectl enqueue '{"command":"invalidcommand","max_retries":2}'
+```
+Output:
+```bash
+Enqueued job job5
+```
+
+### 8. Verify dead and DLQ jobs
+
+Command:
+```bash
+queuectl list --state failed
+```
+Expected Output:
+```bash
+{"id": "job5", "command": "invalidcommand", "state": "dead", "attempts": 3, "max_retries": 2, "priority": 5, "created_at": "2025-11-08T12:37:51.770491+00:00", "updated_at": "2025-11-08T12:37:58.624076+00:00", "run_after": 1762605478, "last_error": "exit:127"}
+```
+
+Command:
+```bash
+queuectl dlq list
+```
+Expected Output:
+```bash
+{"id": "job5", "command": "invalidcommand", "state": "dead", "attempts": 3, "max_retries": 2, "priority": 5, "created_at": "2025-11-08T12:37:51.770491+00:00", "updated_at": "2025-11-08T12:37:58.624076+00:00", "run_after": 1762605478, "last_error": "exit:127"}
+```
+
+### 9. Retry a DLQ job
+
+Command:
+```bash
+queuectl dlq retry job5
+```
+Output (Worker terminal):
+```bash
+[worker 0] job job5 failed -> failed (exit:127)
+[worker 0] picked job job5: invalidcommand
+/bin/sh: 1: invalidcommand: not found
+[worker 0] job job5 failed -> failed (exit:127)
+[worker 0] picked job job5: invalidcommand
+/bin/sh: 1: invalidcommand: not found
+[worker 0] job job5 failed -> failed (exit:127)
+[worker 0] picked job job5: invalidcommand
+/bin/sh: 1: invalidcommand: not found
+[worker 0] job job5 failed -> dead (exit:127)
+```
+
+* The retried job will attempted execution again.
+* It failed again and re-entered DLQ — this is expected behavior.
+
+### 10. Check all current jobs
+
+Command:
+```bash
+queuectl list
+```
+Output:
+```bash
+{"id": "job2", "command": "echo High Priority Job", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 1, "created_at": "2025-11-08T12:35:50.089525+00:00", "updated_at": "2025-11-08T12:35:50.982301+00:00", "run_after": 1762605350, "last_error": null}
+{"id": "job1", "command": "echo Hello World", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 5, "created_at": "2025-11-08T12:33:02.155330+00:00", "updated_at": "2025-11-08T12:33:56.393488+00:00", "run_after": 1762605182, "last_error": null}
+{"id": "job3", "command": "echo Medium Priority Job", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 5, "created_at": "2025-11-08T12:35:58.310338+00:00", "updated_at": "2025-11-08T12:35:58.973965+00:00", "run_after": 1762605358, "last_error": null}
+{"id": "job5", "command": "invalidcommand", "state": "dead", "attempts": 3, "max_retries": 2, "priority": 5, "created_at": "2025-11-08T12:37:51.770491+00:00", "updated_at": "2025-11-08T12:40:16.226945+00:00", "run_after": 1762605616, "last_error": "exit:127"}
+{"id": "job4", "command": "echo Low Priority Job", "state": "completed", "attempts": 0, "max_retries": 3, "priority": 9, "created_at": "2025-11-08T12:36:06.510093+00:00", "updated_at": "2025-11-08T12:36:08.165250+00:00", "run_after": 1762605366, "last_error": null}
+```
+
+### 11. Reset the queue
+
+Command:
+```bash
+queuectl reset
+```
+If workers are running, you’ll be prompted:
+```bash
+This will stop all workers and delete all jobs. Continue? (y/N):
+```
+Type:
+```bash
+y
+```
+Output:
+```bash
+Sent SIGTERM to pid 4408
+Sent SIGTERM to pid 4409
+Queue reset successful: all jobs and configurations cleared.
+```
+
+### Step 12. Verify clean state
+
+Command:
+```bash
+queuectl status
+```
+Output:
+```bash
+Job states:
+  pending: 0
+  processing: 0
+  failed: 0
+  completed: 0
+  dead: 0
+Background worker PIDs: []
+```
+
+### 13. Stop background workers (optional)
+
+Command (After starting workers in a different terminal):
+```bash
+queuectl worker stop
+```
+Output (In the workers terminal):
+```bash
+[worker 0] received stop signal, will exit after current job
+[worker 1] received stop signal, will exit after current job
+[worker 0] exiting
+[worker 1] exiting
+```
 ---
 
 ## Architecture Overview
@@ -500,6 +719,7 @@ queuectl dlq list
 ```
 
 ---
+
 
 
 
