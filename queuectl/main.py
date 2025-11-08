@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from .cli_commands import cmd_enqueue,cmd_worker_start,cmd_worker_stop,cmd_list,cmd_status,cmd_dlq_retry,cmd_config_get,cmd_config_set,cmd_dlq_list
+from .cli_commands import cmd_enqueue,cmd_worker_start,cmd_worker_stop,cmd_list,cmd_status,cmd_dlq_retry,cmd_config_get,cmd_config_set,cmd_dlq_list,cmd_reset
 
 
 def build_parser():
@@ -45,6 +45,9 @@ def build_parser():
     cfg_get = cfg_sub.add_parser('get')
     cfg_get.add_argument('key')
     cfg_get.set_defaults(func=cmd_config_get)
+
+    reset = sub.add_parser("reset")
+    reset.set_defaults(func=cmd_reset)
 
     return p
 
