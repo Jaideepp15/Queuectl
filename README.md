@@ -235,12 +235,12 @@ Each job moves through well-defined states from creation to completion.
 │ completed│      │  failed  │
 └──────────┘      └─────┬────┘
                         │
-              retries < max_retries
+              attempts < max_retries
                         │ retry
                         ▼
                   pending again
                         │
-              retries ≥ max_retries
+              attempts ≥ max_retries
                         ▼
                   ┌──────────┐
                   │   dead   │
@@ -358,6 +358,12 @@ Only **one** worker can successfully update this row — others see no match.
 
 Jobs that exceed their retry limits are marked state='dead' and appear in the DLQ.
 
+The DLQ is not a separate database or table, but a logical partition within the jobs table.
+This design:
+* Simplifies querying and persistence.
+* Allows unified indexing and reporting.
+* Preserves full job history (creation, failures, final state) in one place.
+
 You can:
   * List failed jobs:
   ```bash
@@ -367,8 +373,7 @@ You can:
   ```bash
   queuectl dlq retry job7
   ```
-
-This moves the job back to the pending state for reprocessing.
+  This moves the job back to the pending state for reprocessing.
 
 ---
 
@@ -418,6 +423,7 @@ queuectl dlq list
 Amrita Vishwa Vidyapeetham, Coimbatore  
 
 📧 jaideepp15@gmail.com
+
 
 
 
